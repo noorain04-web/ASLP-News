@@ -1,0 +1,188 @@
+news_sources:
+
+  # ==============================
+  # INDIA
+  # ==============================
+
+  - name: "ISHA"
+    url: "https://ishaindia.org.in/"
+    official: true
+
+  - name: "RCI"
+    url: "https://rehabcouncil.nic.in/"
+    official: true
+
+  - name: "NCAHP"
+    url: "https://ncahp.abdm.gov.in/"
+    official: true
+
+  - name: "AIISH"
+    url: "https://aiishmysore.in/"
+    official: true
+
+
+  # ==============================
+  # ASHA
+  # ==============================
+
+  - name: "ASHA Audiology News"
+    url: "https://www.asha.org/news/audiology-news/"
+    official: true
+
+  - name: "ASHA News"
+    url: "https://www.asha.org/news/"
+    official: true
+
+  - name: "ASHA Leader"
+    url: "https://leader.pubs.asha.org/"
+    official: true
+
+
+  # ==============================
+  # AUDIOLOGY
+  # ==============================
+
+  - name: "American Academy of Audiology"
+    url: "https://www.audiology.org/"
+    official: true
+
+  - name: "AudiologyOnline"
+    url: "https://www.audiologyonline.com/"
+    official: false
+
+  - name: "Hearing Health & Technology Matters"
+    url: "https://hearinghealthmatters.org/"
+    official: false
+
+  - name: "British Society of Audiology"
+    url: "https://www.thebsa.org.uk/"
+    official: true
+
+  - name: "American Auditory Society"
+    url: "https://www.amaudiology.org/"
+    official: true
+
+
+  # ==============================
+  # HEARING TECHNOLOGY
+  # ==============================
+
+  - name: "Hearing Review"
+    url: "https://hearingreview.com/"
+    official: false
+
+  - name: "Hearing Tracker"
+    url: "https://www.hearingtracker.com/"
+    official: false
+
+
+  # ==============================
+  # SPEECH-LANGUAGE PATHOLOGY
+  # ==============================
+
+  - name: "Royal College of Speech and Language Therapists"
+    url: "https://www.rcslt.org/"
+    official: true
+
+
+  # ==============================
+  # VESTIBULAR
+  # ==============================
+
+  - name: "Vestibular Disorders Association"
+    url: "https://vestibular.org/"
+    official: true
+
+
+  # ==============================
+  # CLEFT / CRANIOFACIAL
+  # ==============================
+
+  - name: "American Cleft Palate-Craniofacial Association"
+    url: "https://acpa-cpf.org/"
+    official: true
+
+
+  # ==============================
+  # STUTTERING
+  # ==============================
+
+  - name: "Stuttering Foundation"
+    url: "https://www.stutteringhelp.org/"
+    official: true
+
+
+  # ==============================
+  # APHASIA
+  # ==============================
+
+  - name: "National Aphasia Association"
+    url: "https://www.aphasia.org/"
+    official: true
+
+
+  # ==============================
+  # AAC
+  # ==============================
+
+  - name: "International Society for Augmentative and Alternative Communication"
+    url: "https://www.isaac-online.org/"
+    official: true
+
+
+job_sources:
+
+  # ==============================
+  # INDIAN GOVERNMENT / INSTITUTIONS
+  # ==============================
+
+  - name: "AIISH"
+    url: "https://aiishmysore.in/"
+    official: true
+
+  - name: "AYJNISHD"
+    url: "https://www.ayjnihh.nic.in/"
+    official: true
+
+  - name: "NIEPID"
+    url: "https://niepid.nic.in/"
+    official: true
+
+  - name: "NIEPMD"
+    url: "https://niepmd.tn.nic.in/"
+    official: true
+
+  - name: "NIMHANS"
+    url: "https://www.nimhans.ac.in/"
+    official: true
+
+  - name: "PGIMER Chandigarh"
+    url: "https://pgimer.edu.in/"
+    official: true
+
+  - name: "AIIMS"
+    url: "https://www.aiims.edu/"
+    official: true
+
+  - name: "RCI"
+    url: "https://rehabcouncil.nic.in/"
+    official: true
+
+
+conferences:
+
+  - name: "ISHACON 2027"
+    start: "2027-01-29"
+    end: "2027-01-31"
+    location: "Visakhapatnam, Andhra Pradesh, India"
+    organizer: "Indian Speech-Language and Hearing Association"
+    url: "https://ishacon2027.com/"
+    priority: 100
+
+  - name: "AAA Annual Convention 2027"
+    start: "2027-04-07"
+    end: "2027-04-10"
+    location: "USA"
+    organizer: "American Academy of Audiology"
+    url: "https://www.audiology.org/"
+    priority: 90
