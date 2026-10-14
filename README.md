@@ -44,11 +44,11 @@ Do not add your Gmail password or Google account credentials to GitHub. Apps Scr
 
 ### 4. Test before sharing
 
-1. Open the deployed `/exec` URL in a private/incognito window.
+1. Open the deployed Apps Script `/exec` URL in a private/incognito window, or use the Subscribe button on the [ASLP-News GitHub Pages site](https://noorain04-web.github.io/ASLP-News/).
 2. Subscribe with an email address you can access and click the confirmation link.
 3. Open **Actions → Speech Hearing Daily Intelligence → Run workflow**.
 4. Check the workflow logs and the confirmed subscriber's inbox.
-5. Share the deployed `/exec` URL once the test succeeds.
+5. Once the test succeeds, share the public [ASLP-News website](https://noorain04-web.github.io/ASLP-News/) with subscribers.
 
 ## Privacy and operational notes
 
