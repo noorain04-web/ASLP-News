@@ -50,7 +50,7 @@ function doPost(e) {
     const lastRow = sheet.getLastRow();
     if (lastRow < 2) return json_(200, { ok: true, sent: 0, message: "No subscribers yet" });
 
-    const rows = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
+    const rows = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
     const recipients = [];
     rows.forEach((row, idx) => {
       const email = String(row[0] || "").trim().toLowerCase();
@@ -140,6 +140,7 @@ function verifySubscription_(token) {
   sheet.getRange(row, 2).setValue("confirmed");
   sheet.getRange(row, 7).setValue(new Date()); // verifiedAt
   sheet.getRange(row, 3).clearContent();
+  sheet.getRange(row, 5).setValue(randomToken_());
   return "Your subscription is confirmed. ASLP-News daily intelligence will arrive by email.";
 }
 
