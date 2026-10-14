@@ -250,6 +250,10 @@ job_sources:
     url: "https://www.rrbcdg.gov.in/"
     official: true
 
+  - name: "RRB CEN 05/2026 Paramedical Notification"
+    url: "https://rrb.indianrailways.gov.in/getdata?loc=chandigarh&cenum=05/2026&category=Notification"
+    official: true
+
   - name: "RRB Gorakhpur"
     url: "https://www.rrbgkp.gov.in/"
     official: true
