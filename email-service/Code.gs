@@ -52,6 +52,7 @@ function doPost(e) {
 
     const rows = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
     const recipients = [];
+    const failed = [];
     rows.forEach((row, idx) => {
       const email = String(row[0] || "").trim().toLowerCase();
       const status = String(row[1] || "").trim();
@@ -74,18 +75,29 @@ function doPost(e) {
         "\n\n—\nYou are receiving this because you subscribed to ASLP-News.\n" +
         "Unsubscribe: " + unsubscribeUrl + "\n" +
         "Information is provided for professional awareness; verify details with the official source.";
-      MailApp.sendEmail({
-        to: recipient.email,
-        subject: SUBJECT_PREFIX + " — " + alertDate,
-        body: emailBody,
-        name: SENDER_NAME
-      });
-      sheet.getRange(recipient.sheetRow, 6).setValue(new Date()); // lastSentAt
-      sent++;
+      try {
+        MailApp.sendEmail({
+          to: recipient.email,
+          subject: SUBJECT_PREFIX + " — " + alertDate,
+          body: emailBody,
+          name: SENDER_NAME
+        });
+        sheet.getRange(recipient.sheetRow, 6).setValue(new Date()); // lastSentAt
+        sent++;
+      } catch (sendError) {
+        console.error("Email failed for row " + recipient.sheetRow + ": " + sendError);
+        failed.push(recipient.email);
+      }
     });
 
-    props.setProperty("LAST_ALERT_DATE", alertDate);
-    return json_(200, { ok: true, sent, alertDate });
+    if (failed.length === 0) props.setProperty("LAST_ALERT_DATE", alertDate);
+    return json_(failed.length ? 207 : 200, {
+      ok: failed.length === 0,
+      sent,
+      failed: failed.length,
+      alertDate,
+      message: failed.length ? "Some messages failed; inspect Apps Script logs before retrying." : "All messages sent"
+    });
   } catch (err) {
     console.error(err && err.stack ? err.stack : err);
     return json_(500, { ok: false, error: "Internal error while processing request" });
