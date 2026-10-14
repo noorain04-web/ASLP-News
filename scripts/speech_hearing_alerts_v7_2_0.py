@@ -497,8 +497,7 @@ def parse_date(value):
     try:
 
         parsed = dtparser.parse(
-            str(value),
-            fuzzy=True,
+            str(value),            fuzzy=True,
             dayfirst=True,
         )
 
@@ -998,7 +997,6 @@ def links_from_page(
                 url,
             )
         )
-
     return output
 
 
@@ -1498,7 +1496,6 @@ def collect_conferences(
     )
 
     unique = {}
-
     for event in all_events:
 
         try:
@@ -1575,10 +1572,11 @@ def government_domain(url):
 
 def extract_deadline(text):
     patterns = [
-        r"(?:last date|last day|closing date|deadline|apply before|applications close|last date for application|last date to apply|submission deadline).{0,220}?(d{1,2}s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*s+20d{2})",
-        r"(?:last date|last day|closing date|deadline|apply before|applications close|last date for application|last date to apply|submission deadline).{0,220}?((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*s+d{1,2},?s+20d{2})",
-        r"(?:last date|deadline|closing date|last date to apply|submission deadline).{0,180}?(20d{2}-d{1,2}-d{1,2})",
-        r"(?:last date|deadline|closing date|last date to apply|submission deadline).{0,180}?(d{1,2}/d{1,2}/20d{2})",
+        r"(?:last date|last day|closing date|deadline|apply before|applications close|last date for application|last date to apply|submission deadline).{0,220}?(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+20\d{2})",
+        r"(?:last date|last day|closing date|deadline|apply before|applications close|last date for application|last date to apply|submission deadline).{0,220}?((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+20\d{2})",
+        r"(?:last date|deadline|closing date|last date to apply|submission deadline).{0,180}?(20\d{2}-\d{1,2}-\d{1,2})",
+        r"(?:last date|deadline|closing date|last date to apply|submission deadline).{0,180}?(\d{1,2}/\d{1,2}/20\d{2})",
+        r"(?:last date|deadline|closing date|last date to apply|submission deadline).{0,180}?(\d{1,2}[.-]\d{1,2}[.-]20\d{2})",
     ]
     for pattern in patterns:
         match = re.search(pattern, text or "", re.I)
@@ -1997,8 +1995,7 @@ def main():
     )
 
     news = collect_news(
-        config
-    )
+        config    )
 
     print(
         f"News retained: {len(news)}"
