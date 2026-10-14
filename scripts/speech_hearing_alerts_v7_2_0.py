@@ -398,7 +398,6 @@ JOB_SIGNALS = [
     "eligible candidates", "applications are invited", "advertisement",
     "employment notice", "recruitment notice", "notification", "careers",
 ]
-
 JOB_EXCLUDE = [
     "result", "results", "admission", "course", "training", "internship",
     "volunteer", "scope of practice", "syllabus", "curriculum",
@@ -500,6 +499,7 @@ def parse_date(value):
         parsed = dtparser.parse(
             str(value),
             fuzzy=True,
+            dayfirst=True,
         )
 
         if parsed.tzinfo is None:
@@ -798,7 +798,6 @@ def source_health(
     )
 
     try:
-
         columns = {
             row[1]
             for row in con.execute(
@@ -1197,7 +1196,6 @@ def collect_news(
                 detected = topics_for(
                     quick_text
                 )
-
                 if not detected:
 
                     continue
@@ -1597,8 +1595,7 @@ def has_relevant_qualification(text):
 
 
 def has_relevant_role(text):
-    normalized = normalize(text)
-    return any(normalize(term) in normalized for term in JOB_TERMS)
+    normalized = normalize(text)    return any(normalize(term) in normalized for term in JOB_TERMS)
 
 
 def job_link_candidate(title, url):
@@ -1643,25 +1640,46 @@ def qualification_evidence(text):
 
 def collect_jobs(config):
     jobs = []
+    generic_index_titles = {
+        "career", "careers", "recruitment", "recruitment notices",
+        "vacancy", "vacancies", "current vacancies", "job openings",
+        "job opportunities", "employment opportunities", "notifications",
+        "recruitment and careers", "career opportunities",
+    }
+
     for source in config.get("job_sources", []):
         name, url = source.get("name", "Unknown"), source.get("url", "")
         if not url:
             continue
         accepted = 0
         try:
-            links = links_from_page(url, fetch(url))
-            candidates, seen_links = [], set()
-            for title, link in links[:1200]:
+            source_links = links_from_page(url, fetch(url))
+            candidate_links = []
+            seen_links = set()
+
+            def add_candidate(title, link):
                 if not job_link_candidate(title, link):
-                    continue
+                    return
                 parsed = urlparse(link)
                 canonical = (parsed.netloc.lower().removeprefix("www."), parsed.path.rstrip("/"))
                 if canonical in seen_links:
-                    continue
+                    return
                 seen_links.add(canonical)
-                candidates.append((title, link))
+                candidate_links.append((title, link))
 
-            for title, link in candidates[:180]:
+            # Crawl one level into official career/recruitment index pages.
+            for title, link in source_links[:1200]:
+                if normalize(title) in generic_index_titles:
+                    try:
+                        nested = links_from_page(link, fetch(link))
+                        for child_title, child_link in nested[:1200]:
+                            add_candidate(child_title, child_link)
+                    except Exception:
+                        continue
+                else:
+                    add_candidate(title, link)
+
+            for title, link in candidate_links[:220]:
                 if not government_domain(link) and not source.get("official", False):
                     continue
                 article = inspect_article(link)
@@ -1683,6 +1701,7 @@ def collect_jobs(config):
                     "source": name,
                 })
                 accepted += 1
+
             source_health("JOB:" + name, True, accepted)
         except Exception as exc:
             source_health("JOB:" + name, False, 0, str(exc))
@@ -1694,7 +1713,10 @@ def collect_jobs(config):
         key = hash_key(normalize(job["title"]) + " " + host + " " + job["deadline"].isoformat())
         if key not in unique or (not unique[key].get("qualification") and job.get("qualification")):
             unique[key] = job
-    jobs = [job for job in unique.values() if job.get("title") and job.get("institution") and job.get("url") and job.get("deadline")]
+    jobs = [
+        job for job in unique.values()
+        if job.get("title") and job.get("institution") and job.get("url") and job.get("deadline")
+    ]
     jobs.sort(key=lambda item: (item["deadline"], item["institution"], item["title"]))
     return jobs
 
@@ -1998,7 +2020,6 @@ def main():
     print(
         "Checking government vacancies..."
     )
-
     jobs = collect_jobs(
         config
     )
