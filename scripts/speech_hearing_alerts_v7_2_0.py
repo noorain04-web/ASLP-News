@@ -33,6 +33,8 @@ import os
 import re
 import sqlite3
 import hashlib
+import difflib
+import io
 import warnings
 from datetime import datetime, timedelta, date
 from pathlib import Path
@@ -40,6 +42,7 @@ from urllib.parse import urljoin, urlparse
 
 import requests
 import yaml
+from pypdf import PdfReader
 
 from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 from dateutil import parser as dtparser
@@ -72,9 +75,9 @@ IST = ZoneInfo("Asia/Kolkata")
 NEWS_DAYS = 7
 MEMORY_DAYS = 30
 
-MAX_NEWS = 6
-MAX_CONFERENCES = 3
-MAX_JOBS = 5
+MAX_NEWS = 15
+MAX_CONFERENCES = 8
+MAX_JOBS = None  # No arbitrary cap: include every verified open vacancy found.
 
 MIN_CONFERENCE_DAYS = 90
 
@@ -372,54 +375,35 @@ HIGH_VALUE = [
 # ============================================================
 
 JOB_TERMS = [
-    "audiologist",
-    "audiology",
-    "speech therapist",
-    "speech-language pathologist",
-    "speech language pathologist",
-    "speech and language therapist",
-    "speech-language therapist",
-    "audiologist and speech therapist",
-    "audiologist & speech therapist",
+    "audiologist", "audiology", "speech therapist",
+    "speech-language pathologist", "speech language pathologist",
+    "speech and language therapist", "speech-language therapist",
+    "speech and hearing", "audiologist and speech therapist",
+    "audiologist & speech therapist", "audiologist cum speech therapist",
+]
+
+JOB_QUALIFICATION_TERMS = [
+    "baslp", "b.aslp", "b a slp", "bachelor in audiology",
+    "bachelor of audiology", "bachelor in audiology speech language pathology",
+    "maslp", "m.aslp", "m a slp", "m.sc audiology", "msc audiology",
+    "m.sc speech language pathology", "msc speech language pathology",
+    "master in audiology", "master of audiology", "speech and hearing",
+    "bachelor of speech and hearing", "audiology and speech language pathology",
 ]
 
 JOB_SIGNALS = [
-    "recruitment",
-    "recruiting",
-    "vacancy",
-    "vacancies",
-    "apply",
-    "application",
-    "appointment",
-    "walk-in",
-    "walk in",
-    "last date",
-    "closing date",
-    "deadline",
-    "applications invited",
-    "online application",
-    "eligible candidates",
-    "applications are invited",
+    "recruitment", "recruiting", "vacancy", "vacancies", "apply",
+    "application", "appointment", "walk-in", "walk in", "last date",
+    "closing date", "deadline", "applications invited", "online application",
+    "eligible candidates", "applications are invited", "advertisement",
+    "employment notice", "recruitment notice", "notification", "careers",
 ]
 
 JOB_EXCLUDE = [
-    "result",
-    "results",
-    "admission",
-    "course",
-    "training",
-    "internship",
-    "fellowship",
-    "consultant",
-    "consultancy",
-    "honorary",
-    "volunteer",
-    "scope of practice",
-    "syllabus",
-    "curriculum",
-    "practice portal",
-    "department of audiology",
-    "department of speech",
+    "result", "results", "admission", "course", "training", "internship",
+    "volunteer", "scope of practice", "syllabus", "curriculum",
+    "answer key", "answer keys", "provisional selection list",
+    "selected candidates", "waitlist", "waitlisted candidates",
 ]
 
 
@@ -797,8 +781,7 @@ def remember(
         con.close()
 
 
-# ============================================================
-# SOURCE HEALTH
+# ============================================================# SOURCE HEALTH
 # ============================================================
 
 def source_health(
@@ -1024,115 +1007,40 @@ def links_from_page(
 # ARTICLE METADATA
 # ============================================================
 
-def inspect_article(
-    url
-):
+def inspect_article(url):
 
     try:
+        response = requests.get(url, headers=HEADERS, timeout=TIMEOUT, allow_redirects=True)
+        response.raise_for_status()
+        content_type = response.headers.get("Content-Type", "").lower()
+        is_pdf = "application/pdf" in content_type or urlparse(response.url).path.lower().endswith(".pdf")
+        if is_pdf:
+            reader = PdfReader(io.BytesIO(response.content))
+            extracted = clean_text(" ".join((page.extract_text() or "") for page in reader.pages[:35]))
+            return {"title": "", "summary": "", "published": extract_date(extracted), "body": extracted[:20000]}
 
-        html = fetch(
-            url
-        )
-
-        soup = BeautifulSoup(
-            html,
-            "html.parser",
-        )
-
-        title = ""
-
-        if soup.title:
-
-            title = clean_text(
-                soup.title.get_text(
-                    " ",
-                    strip=True,
-                )
-            )
-
-        description = ""
-
-        meta = soup.find(
-            "meta",
-            attrs={
-                "name":
-                    "description"
-            },
-        )
-
-        if meta:
-
-            description = clean_text(
-                meta.get(
-                    "content",
-                    "",
-                )
-            )
-
+        soup = BeautifulSoup(response.text, "html.parser")
+        title = clean_text(soup.title.get_text(" ", strip=True)) if soup.title else ""
+        meta = soup.find("meta", attrs={"name": "description"})
+        description = clean_text(meta.get("content", "")) if meta else ""
         published = None
-
         selectors = [
-            "time[datetime]",
-            "meta[property='article:published_time']",
-            "meta[property='og:article:published_time']",
-            "meta[name='date']",
-            "meta[name='pubdate']",
-            "meta[name='publication_date']",
+            "time[datetime]", "meta[property='article:published_time']",
+            "meta[property='og:article:published_time']", "meta[name='date']",
+            "meta[name='pubdate']", "meta[name='publication_date']",
         ]
-
         for selector in selectors:
-
-            node = soup.select_one(
-                selector
-            )
-
+            node = soup.select_one(selector)
             if not node:
                 continue
-
-            value = (
-                node.get(
-                    "datetime"
-                )
-                or node.get(
-                    "content"
-                )
-                or node.get_text(
-                    " ",
-                    strip=True,
-                )
-            )
-
-            published = (
-                parse_date(value)
-                or extract_date(value)
-            )
-
+            value = node.get("datetime") or node.get("content") or node.get_text(" ", strip=True)
+            published = parse_date(value) or extract_date(value)
             if published:
-
                 break
-
-        body = clean_text(
-            soup.get_text(
-                " ",
-                strip=True,
-            )
-        )
-
-        return {
-            "title": title,
-            "summary": description,
-            "published": published,
-            "body": body[:10000],
-        }
-
-    except Exception:
-
-        return {
-            "title": "",
-            "summary": "",
-            "published": None,
-            "body": "",
-        }
+        body = clean_text(soup.get_text(" ", strip=True))
+        return {"title": title, "summary": description, "published": published, "body": body[:20000]}
+    except Exception as exc:
+        return {"title": "", "summary": "", "published": None, "body": "", "error": str(exc)[:300]}
 
 
 # ============================================================
@@ -1197,8 +1105,7 @@ def news_score(item):
         ) * 2,
     )
 
-    # High-value development terms
-    for term in HIGH_VALUE:
+    # High-value development terms    for term in HIGH_VALUE:
 
         if normalize(term) in text:
 
@@ -1443,69 +1350,38 @@ def collect_news(
                 str(exc),
             )
 
-    # ========================================================
-    # DUPLICATE CLUSTERING
-    # ========================================================
-
-    clusters = {}
-
+    # Deduplicate by canonical URL and near-identical titles.
+    clusters = []
     for item in candidates:
-
-        normalized_title = normalize(
-            item["title"]
-        )
-
-        words = [
-            w
-            for w in normalized_title.split()
-            if len(w) > 3
-        ]
-
-        cluster_key = hash_key(
-            " ".join(
-                words[:18]
-            )
-        )
-
-        clusters.setdefault(
-            cluster_key,
-            [],
-        ).append(
-            item
-        )
+        if not item.get("title") or not item.get("url"):
+            continue
+        parsed = urlparse(item["url"])
+        canonical = (parsed.netloc.lower().removeprefix("www."), parsed.path.rstrip("/"))
+        normalized_title = normalize(item["title"])
+        match = None
+        for cluster in clusters:
+            rep_item = cluster[0]
+            rep_url = urlparse(rep_item["url"])
+            rep_canonical = (rep_url.netloc.lower().removeprefix("www."), rep_url.path.rstrip("/"))
+            rep_title = normalize(rep_item["title"])
+            ratio = difflib.SequenceMatcher(None, normalized_title, rep_title).ratio()
+            a, b = set(normalized_title.split()), set(rep_title.split())
+            overlap = len(a & b) / max(1, len(a | b))
+            if canonical == rep_canonical or ratio >= 0.86 or overlap >= 0.82:
+                match = cluster
+                break
+        if match is None:
+            clusters.append([item])
+        else:
+            match.append(item)
 
     final = []
-
-    for cluster in clusters.values():
-
-        cluster.sort(
-            key=lambda x:
-                x["score"],
-            reverse=True,
-        )
-
+    for cluster in clusters:
+        cluster.sort(key=lambda x: (x.get("score", 0), bool(x.get("official")), bool(x.get("published"))), reverse=True)
         best = cluster[0]
-
-        best["sources"] = list(
-            dict.fromkeys(
-                item["source"]
-                for item in cluster
-            )
-        )
-
-        final.append(
-            best
-        )
-
-    final.sort(
-        key=lambda x:
-            (
-                x["score"],
-                x["published"],
-            ),
-        reverse=True,
-    )
-
+        best["sources"] = list(dict.fromkeys(item.get("source", "") for item in cluster if item.get("source")))
+        final.append(best)
+    final.sort(key=lambda x: (x.get("score", 0), x.get("published") or now_ist()), reverse=True)
     return final[:MAX_NEWS]
 
 
@@ -1597,8 +1473,7 @@ def verify_conference(
 
         matches = sum(
             word in text
-            for word in event_words
-        )
+            for word in event_words        )
 
         return matches >= 1
 
@@ -1695,284 +1570,133 @@ def collect_conferences(
 # GOVERNMENT JOBS
 # ============================================================
 
-def government_domain(
-    url
-):
-
-    host = urlparse(
-        url
-    ).netloc.lower()
-
-    return (
-        ".gov.in" in host
-        or
-        ".nic.in" in host
-        or
-        host.endswith(
-            ".edu.in"
-        )
-    )
+def government_domain(url):
+    host = urlparse(url).netloc.lower().split(":")[0]
+    return host.endswith((".gov.in", ".nic.in", ".edu.in", ".ac.in")) or host == "gov.in"
 
 
-def extract_deadline(
-    text
-):
-
+def extract_deadline(text):
     patterns = [
-
-        r"(?:last date|last day|closing date|deadline|apply before|applications close|last date for application)"
-        r".{0,180}?"
-        r"(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+20\d{2})",
-
-        r"(?:last date|last day|closing date|deadline|apply before|applications close|last date for application)"
-        r".{0,180}?"
-        r"((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+20\d{2})",
-
-        r"(?:last date|deadline|closing date)"
-        r".{0,150}?"
-        r"(20\d{2}-\d{1,2}-\d{1,2})",
-
-        r"(?:last date|deadline|closing date)"
-        r".{0,150}?"
-        r"(\d{1,2}/\d{1,2}/20\d{2})",
+        r"(?:last date|last day|closing date|deadline|apply before|applications close|last date for application|last date to apply|submission deadline).{0,220}?(d{1,2}s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*s+20d{2})",
+        r"(?:last date|last day|closing date|deadline|apply before|applications close|last date for application|last date to apply|submission deadline).{0,220}?((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*s+d{1,2},?s+20d{2})",
+        r"(?:last date|deadline|closing date|last date to apply|submission deadline).{0,180}?(20d{2}-d{1,2}-d{1,2})",
+        r"(?:last date|deadline|closing date|last date to apply|submission deadline).{0,180}?(d{1,2}/d{1,2}/20d{2})",
     ]
-
     for pattern in patterns:
-
-        match = re.search(
-            pattern,
-            text or "",
-            re.I,
-        )
-
+        match = re.search(pattern, text or "", re.I)
         if match:
-
-            parsed = parse_date(
-                match.group(1)
-            )
-
+            parsed = parse_date(match.group(1))
             if parsed:
-
                 return parsed.date()
-
     return None
 
 
-def genuine_vacancy(
-    title,
-    text,
-):
+def has_relevant_qualification(text):
+    normalized = normalize(text)
+    return any(normalize(term) in normalized for term in JOB_QUALIFICATION_TERMS)
 
-    combined = normalize(
-        title
-        + " "
-        + text
-    )
 
-    if not any(
-        normalize(term) in combined
-        for term in JOB_TERMS
-    ):
+def has_relevant_role(text):
+    normalized = normalize(text)
+    return any(normalize(term) in normalized for term in JOB_TERMS)
 
+
+def job_link_candidate(title, url):
+    combined = normalize(str(title) + " " + str(url))
+    signals = JOB_TERMS + JOB_QUALIFICATION_TERMS + JOB_SIGNALS + [
+        "career", "careers", "jobs", "job opening", "employment",
+        "advertisement", "recruitment", "notification", "paramedical",
+        "project staff", "technical support", "research assistant",
+    ]
+    return any(normalize(term) in combined for term in signals)
+
+
+def genuine_vacancy(title, text):
+    title_text = normalize(title)
+    combined = normalize(title + " " + text)
+    if any(normalize(term) in title_text for term in JOB_EXCLUDE):
         return False
-
-    if any(
-        normalize(term) in combined
-        for term in JOB_EXCLUDE
-    ):
-
+    if not (has_relevant_role(combined) or has_relevant_qualification(combined)):
         return False
-
-    if not any(
-        normalize(term) in combined
-        for term in JOB_SIGNALS
-    ):
-
-        return False
-
-    return True
+    return any(normalize(term) in combined for term in JOB_SIGNALS)
 
 
-def collect_jobs(
-    config
-):
+def qualification_evidence(text):
+    if not text:
+        return ""
+    sentences = re.split(r"(?<=[.;])s+|
++", text)
+    markers = [
+        r"B.?s*A.?s*S.?s*L.?s*P.?", r"M.?s*A.?s*S.?s*L.?s*P.?",
+        r"BASLP", r"MASLP",
+        r"bachelor.{0,70}(?:audiology|speech.{0,15}language|speech.{0,15}hearing)",
+        r"master.{0,70}(?:audiology|speech.{0,15}language|speech.{0,15}hearing)",
+        r"M.?s*Sc.?.{0,50}(?:audiology|speech.{0,15}language|speech.{0,15}hearing)",
+    ]
+    for sentence in sentences:
+        if any(re.search(pattern, sentence, re.I) for pattern in markers):
+            cleaned = clean_text(sentence)
+            if cleaned:
+                return cleaned[:260]
+    return ""
 
+
+def collect_jobs(config):
     jobs = []
-
-    for source in config.get(
-        "job_sources",
-        [],
-    ):
-
-        name = source.get(
-            "name",
-            "Unknown",
-        )
-
-        url = source.get(
-            "url",
-            "",
-        )
-
+    for source in config.get("job_sources", []):
+        name, url = source.get("name", "Unknown"), source.get("url", "")
         if not url:
             continue
-
         accepted = 0
-
         try:
-
-            html = fetch(
-                url
-            )
-
-            links = links_from_page(
-                url,
-                html,
-            )
-
-            for title, link in links[:700]:
-
-                if not any(
-                    normalize(term)
-                    in normalize(
-                        title
-                        + " "
-                        + link
-                    )
-                    for term in JOB_TERMS
-                ):
-
+            links = links_from_page(url, fetch(url))
+            candidates, seen_links = [], set()
+            for title, link in links[:1200]:
+                if not job_link_candidate(title, link):
                     continue
-
-                if not government_domain(
-                    link
-                ) and not source.get(
-                    "official",
-                    False,
-                ):
-
+                parsed = urlparse(link)
+                canonical = (parsed.netloc.lower().removeprefix("www."), parsed.path.rstrip("/"))
+                if canonical in seen_links:
                     continue
+                seen_links.add(canonical)
+                candidates.append((title, link))
 
-                article = inspect_article(
-                    link
-                )
-
-                page_title = (
-                    article["title"]
-                    or title
-                )
-
-                body = article[
-                    "body"
-                ]
-
-                if not genuine_vacancy(
-                    page_title,
-                    body,
-                ):
-
+            for title, link in candidates[:180]:
+                if not government_domain(link) and not source.get("official", False):
                     continue
-
-                deadline = extract_deadline(
-                    body
-                )
-
-                if not deadline:
-
+                article = inspect_article(link)
+                page_title = article.get("title") or clean_text(title)
+                body = article.get("body", "")
+                combined = page_title + " " + title + " " + body
+                if not page_title or not link or not genuine_vacancy(page_title + " " + title, body):
                     continue
-
-                if deadline < today():
-
+                deadline = extract_deadline(body or combined)
+                if not deadline or deadline < today():
                     continue
-
-                combined = normalize(
-                    page_title
-                    + " "
-                    + body
-                )
-
-                if (
-                    "scope of practice"
-                    in combined
-                    or
-                    "curriculum"
-                    in combined
-                    or
-                    "syllabus"
-                    in combined
-                ):
-
+                if any(normalize(term) in normalize(page_title + " " + title) for term in JOB_EXCLUDE):
                     continue
-
-                if (
-                    "result"
-                    in combined
-                    and
-                    "apply"
-                    not in combined
-                ):
-
+                if not (has_relevant_role(combined) or has_relevant_qualification(combined)):
                     continue
-
-                jobs.append(
-                    {
-                        "title":
-                            page_title,
-
-                        "institution":
-                            name,
-
-                        "url":
-                            link,
-
-                        "deadline":
-                            deadline,
-
-                        "source":
-                            name,
-                    }
-                )
-
+                jobs.append({
+                    "title": page_title, "institution": name, "url": link,
+                    "deadline": deadline, "qualification": qualification_evidence(body),
+                    "source": name,
+                })
                 accepted += 1
-
-            source_health(
-                "JOB:" + name,
-                True,
-                accepted,
-            )
-
+            source_health("JOB:" + name, True, accepted)
         except Exception as exc:
+            source_health("JOB:" + name, False, 0, str(exc))
 
-            source_health(
-                "JOB:" + name,
-                False,
-                0,
-                str(exc),
-            )
-
-    # Deduplicate
     unique = {}
-
     for job in jobs:
-
-        key = hash_key(
-            job["title"]
-            + " "
-            + job["institution"]
-        )
-
-        unique[key] = job
-
-    jobs = list(
-        unique.values()
-    )
-
-    jobs.sort(
-        key=lambda x:
-            x["deadline"]
-    )
-
-    return jobs[:MAX_JOBS]
+        parsed = urlparse(job["url"])
+        host = parsed.netloc.lower().removeprefix("www.")
+        key = hash_key(normalize(job["title"]) + " " + host + " " + job["deadline"].isoformat())
+        if key not in unique or (not unique[key].get("qualification") and job.get("qualification")):
+            unique[key] = job
+    jobs = [job for job in unique.values() if job.get("title") and job.get("institution") and job.get("url") and job.get("deadline")]
+    jobs.sort(key=lambda item: (item["deadline"], item["institution"], item["title"]))
+    return jobs
 
 
 # ============================================================
@@ -1997,8 +1721,7 @@ def professional_impact(
         for word in [
             "cpt",
             "reimbursement",
-            "medicare",
-            "payment",
+            "medicare",            "payment",
             "coding",
         ]
     ):
@@ -2065,175 +1788,67 @@ def professional_impact(
 # FORMAT
 # ============================================================
 
-def format_news(
-    news
-):
-
-    lines = [
-        "🧠 CLINICAL / RESEARCH / POLICY / TECHNOLOGY",
-        "",
-    ]
-
-    if not news:
-
-        lines.append(
-            "No high-priority, non-duplicate "
-            "professional development was verified "
-            "in the current 7-day monitoring window."
-        )
-
-        return "\n".join(lines)
-
-    for i, item in enumerate(
-        news,
-        1,
-    ):
-
-        topic_text = ", ".join(
-            item["topics"][:4]
-        )
-
-        sources = ", ".join(
-            item.get(
-                "sources",
-                [
-                    item["source"]
-                ],
-            )
-        )
-
-        lines.extend(
-            [
-                f"{i}. {item['title']}",
-                f"🏛️ {sources}",
-                f"🧩 Area: {topic_text}",
-                (
-                    "🎯 Why it matters: "
-                    + professional_impact(
-                        item
-                    )
-                ),
-                f"🔗 {item['url']}",
-                "",
-            ]
-        )
-
-    return "\n".join(lines).rstrip()
+def format_news(news):
+    items = [item for item in news if item.get("title") and item.get("url") and item.get("source")]
+    lines = ["CLINICAL, RESEARCH, POLICY & TECHNOLOGY UPDATES", ""]
+    if not items:
+        lines.append("No qualifying, non-duplicate updates were verified in the current 7-day monitoring window.")
+        return "
+".join(lines)
+    for index, item in enumerate(items, 1):
+        topics = [topic for topic in item.get("topics", []) if topic]
+        sources = [source for source in item.get("sources", []) if source]
+        if not sources and item.get("source"):
+            sources = [item["source"]]
+        lines.extend([f"{index}. {item['title']}", f"Source: {', '.join(dict.fromkeys(sources))}"])
+        if topics:
+            lines.append("Area: " + ", ".join(topics[:4]))
+        impact = professional_impact(item)
+        if impact:
+            lines.append("Professional relevance: " + impact)
+        lines.append("Source link: " + item["url"])
+        lines.append("")
+    return "
+".join(lines).rstrip()
 
 
-def format_conferences(
-    conferences
-):
-
-    lines = [
-        "📅 TOP 3 UPCOMING NATIONAL / INTERNATIONAL CONFERENCES",
-        "",
-    ]
-
-    if not conferences:
-
-        lines.append(
-            "No verified professional conference "
-            "meeting the ≥90-day criterion was found."
-        )
-
-        return "\n".join(lines)
-
-    for i, event in enumerate(
-        conferences,
-        1,
-    ):
-
-        lines.extend(
-            [
-                f"{i}. {event['name']}",
-                (
-                    f"📅 {event['start']} to "
-                    f"{event['end']} | "
-                    f"⏳ {event['days_away']} days away"
-                ),
-                (
-                    f"📍 {event['location']}"
-                ),
-                (
-                    f"🏛️ {event['organizer']}"
-                ),
-                f"🔗 {event['url']}",
-                "",
-            ]
-        )
-
-    return "\n".join(lines).rstrip()
+def format_conferences(conferences):
+    items = [event for event in conferences if event.get("name") and event.get("url") and event.get("start") and event.get("end") and event.get("location") and event.get("organizer")]
+    lines = ["UPCOMING PROFESSIONAL CONFERENCES", ""]
+    if not items:
+        lines.append("No verified conference meeting the 90-day advance-notice criterion was found.")
+        return "
+".join(lines)
+    for index, event in enumerate(items, 1):
+        lines.extend([
+            f"{index}. {event['name']}",
+            f"Dates: {event['start']} to {event['end']} ({event['days_away']} days away)",
+            f"Location: {event['location']}",
+            f"Organizer: {event['organizer']}",
+            f"Official event link: {event['url']}",
+            "",
+        ])
+    return "
+".join(lines).rstrip()
 
 
-def format_jobs(
-    jobs
-):
-
-    lines = [
-        "💼 GOVERNMENT AUDIOLOGY / SLP JOBS — OPEN NOW",
-        "",
-    ]
-
-    if not jobs:
-
-        lines.append(
-            "No verified government Audiology/SLP "
-            "vacancy with a future application deadline "
-            "was found."
-        )
-
-        return "\n".join(lines)
-
-    for i, job in enumerate(
-        jobs,
-        1,
-    ):
-
-        remaining = (
-            job["deadline"]
-            -
-            today()
-        ).days
-
-        if remaining <= 3:
-
-            urgency = "🔴"
-
-        elif remaining <= 7:
-
-            urgency = "🟠"
-
-        elif remaining <= 14:
-
-            urgency = "🟡"
-
-        else:
-
-            urgency = "🟢"
-
-        lines.extend(
-            [
-                (
-                    f"{urgency} {i}. "
-                    f"{job['title']}"
-                ),
-
-                f"🏛️ {job['institution']}",
-
-                (
-                    f"📅 Deadline: "
-                    f"{job['deadline'].strftime('%d %B %Y')} "
-                    f"({remaining} days remaining)"
-                ),
-
-                f"🔗 {job['url']}",
-
-                "",
-            ]
-        )
-
-    return "\n".join(lines).rstrip()
+def format_jobs(jobs):
+    items = [job for job in jobs if job.get("title") and job.get("institution") and job.get("url") and job.get("deadline") and job["deadline"] >= today()]
+    lines = ["INDIAN GOVERNMENT / PUBLIC-SECTOR VACANCIES — OPEN AS OF " + today().strftime("%d %B %Y"), ""]
+    if not items:
+        lines.append("No open vacancy matching Audiology, Speech-Language Pathology, or BASLP/MASLP qualification requirements was verified in the monitored official sources.")
+        return "
+".join(lines)
+    for index, job in enumerate(items, 1):
+        remaining = (job["deadline"] - today()).days
+        lines.extend([f"{index}. {job['title']}", f"Institution / recruitment source: {job['institution']}"])
+        if job.get("qualification"):
+            lines.append("Qualification evidence: " + job["qualification"])
+        lines.append(f"Application deadline: {job['deadline'].strftime('%d %B %Y')} ({remaining} day{'s' if remaining != 1 else ''} remaining)")
+        lines.append("Official notice/application link: " + job["url"])
+        lines.append("")
+    return "
+".join(lines).rstrip()
 
 
 # ============================================================
@@ -2394,11 +2009,7 @@ def main():
 
     message = "\n\n".join(
         [
-            (
-                "📚 SPEECH, LANGUAGE, HEARING "
-                "& COMMUNICATION"
-            ),
-
+            "SPEECH, LANGUAGE, HEARING & COMMUNICATION",
             "DAILY PROFESSIONAL INTELLIGENCE",
 
             (
@@ -2418,18 +2029,9 @@ def main():
                 jobs
             ),
 
-            (
-                "🔎 SOURCE STATUS\n"
-                + health_summary()
-            ),
+            "SOURCE STATUS\n" + health_summary(),
 
-            (
-                "ℹ️ Static practice resources, "
-                "generic departmental pages, "
-                "expired vacancies, results, "
-                "training notices and duplicate "
-                "stories are excluded."
-            ),
+            "Editorial standard: expired vacancies, results, static pages, incomplete entries and duplicate stories are excluded.",
         ]
     )
 
