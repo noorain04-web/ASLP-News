@@ -1859,22 +1859,35 @@ def format_conferences(conferences):
 
 
 def format_jobs(jobs):
-    items = [job for job in jobs if job.get("title") and job.get("institution") and job.get("url") and job.get("deadline") and job["deadline"] >= today()]
-    lines = ["INDIAN GOVERNMENT / PUBLIC-SECTOR VACANCIES — OPEN AS OF " + today().strftime("%d %B %Y"), ""]
+    items = [
+        job for job in jobs
+        if job.get("title") and job.get("institution") and job.get("url")
+        and job.get("deadline") and job["deadline"] >= today()
+    ]
+    # Do not include a vacancy heading or a "no openings" message when empty.
     if not items:
-        lines.append("No open vacancy matching Audiology, Speech-Language Pathology, or BASLP/MASLP qualification requirements was verified in the monitored official sources.")
-        return "
-".join(lines)
+        return ""
+
+    lines = [
+        "INDIAN GOVERNMENT / PUBLIC-SECTOR VACANCIES — OPEN AS OF "
+        + today().strftime("%d %B %Y"),
+        "",
+    ]
     for index, job in enumerate(items, 1):
         remaining = (job["deadline"] - today()).days
-        lines.extend([f"{index}. {job['title']}", f"Institution / recruitment source: {job['institution']}"])
+        lines.extend([
+            f"{index}. {job['title']}",
+            f"Institution / recruitment source: {job['institution']}",
+        ])
         if job.get("qualification"):
             lines.append("Qualification evidence: " + job["qualification"])
-        lines.append(f"Application deadline: {job['deadline'].strftime('%d %B %Y')} ({remaining} day{'s' if remaining != 1 else ''} remaining)")
+        lines.append(
+            f"Application deadline: {job['deadline'].strftime('%d %B %Y')} "
+            f"({remaining} day{'s' if remaining != 1 else ''} remaining)"
+        )
         lines.append("Official notice/application link: " + job["url"])
         lines.append("")
-    return "
-".join(lines).rstrip()
+    return "\n".join(lines).rstrip()
 
 
 # ============================================================
