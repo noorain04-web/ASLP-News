@@ -1,0 +1,32 @@
+name: Python syntax check
+
+on:
+  push:
+    paths:
+      - "scripts/speech_hearing_alerts_v7_2_0.py"
+      - ".github/workflows/python-syntax-check.yml"
+  pull_request:
+    paths:
+      - "scripts/speech_hearing_alerts_v7_2_0.py"
+      - ".github/workflows/python-syntax-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile alert generator
+        run: python -m py_compile scripts/speech_hearing_alerts_v7_2_0.py
+      - name: Validate feed configuration
+        run: |
+          python -m pip install pyyaml
+          python -c "import yaml; yaml.safe_load(open('data/feeds_v7_2_0.yaml', encoding='utf-8')); print('Feed YAML valid')"
