@@ -375,11 +375,13 @@ HIGH_VALUE = [
 # ============================================================
 
 JOB_TERMS = [
-    "audiologist", "audiology", "speech therapist",
-    "speech-language pathologist", "speech language pathologist",
-    "speech and language therapist", "speech-language therapist",
-    "speech and hearing", "audiologist and speech therapist",
-    "audiologist & speech therapist", "audiologist cum speech therapist",
+    "audiologist", "audiologist grade", "audiology grade",
+    "audiology officer", "audiology technician",
+    "speech therapist", "speech-language pathologist",
+    "speech language pathologist", "speech and language therapist",
+    "speech-language therapist", "speech and hearing technician",
+    "audiologist and speech therapist", "audiologist & speech therapist",
+    "audiologist cum speech therapist", "slp grade",
 ]
 
 JOB_QUALIFICATION_TERMS = [
@@ -498,7 +500,6 @@ def parse_date(value):
 
         parsed = dtparser.parse(
             str(value),            fuzzy=True,            dayfirst=True,        )
-
         if parsed.tzinfo is None:
 
             parsed = parsed.replace(
@@ -997,8 +998,7 @@ def links_from_page(
         )
     return output
 # ============================================================
-# ARTICLE METADATA
-# ============================================================
+# ARTICLE METADATA# ============================================================
 
 def inspect_article(url):
 
@@ -1498,7 +1498,6 @@ def collect_conferences(
     all_events.extend(
         KNOWN_CONFERENCES
     )
-
     all_events.extend(
         config.get(
             "conferences",
@@ -1997,7 +1996,6 @@ def main():
         CONFIG_FILE.read_text(            encoding="utf-8"
         )
     ) or {}
-
     print(
         "Collecting clinical/research/policy "
         "information..."
