@@ -497,8 +497,7 @@ def parse_date(value):
     try:
 
         parsed = dtparser.parse(
-            str(value),            fuzzy=True,            dayfirst=True,
-        )
+            str(value),            fuzzy=True,            dayfirst=True,        )
 
         if parsed.tzinfo is None:
 
@@ -997,7 +996,6 @@ def links_from_page(
             )
         )
     return output
-
 # ============================================================
 # ARTICLE METADATA
 # ============================================================
@@ -1497,7 +1495,6 @@ def collect_conferences(
 ):
 
     all_events = []
-
     all_events.extend(
         KNOWN_CONFERENCES
     )
@@ -1699,7 +1696,7 @@ def collect_jobs(config):
                 combined = page_title + " " + title + " " + body
                 if not page_title or not link or not genuine_vacancy(page_title + " " + title, body):
                     continue
-                deadline = extract_deadline(body or combined)
+                deadline = extract_deadline(body) or extract_deadline(combined)
                 if not deadline or deadline < today():
                     continue
                 if any(normalize(term) in normalize(page_title + " " + title) for term in JOB_EXCLUDE):
@@ -1997,8 +1994,7 @@ def main():
         )
 
     config = yaml.safe_load(
-        CONFIG_FILE.read_text(
-            encoding="utf-8"
+        CONFIG_FILE.read_text(            encoding="utf-8"
         )
     ) or {}
 
