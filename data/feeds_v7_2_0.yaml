@@ -130,18 +130,51 @@ news_sources:
     official: true
 
 
-job_sources:
-
-  # ==============================
-  # INDIAN GOVERNMENT / INSTITUTIONS
-  # ==============================
-
-  - name: "AIISH"
-    url: "https://aiishmysore.in/"
+  - name: "AIISH Announcements"
+    url: "https://aiishmysore.in/announcements"
     official: true
 
-  - name: "AYJNISHD"
-    url: "https://www.ayjnihh.nic.in/"
+  - name: "AYJNISHD Latest Events"
+    url: "https://ayjnishd.nic.in/category/latest-events/"
+    official: true
+
+  - name: "NIMHANS"
+    url: "https://nimhans.ac.in/"
+    official: true
+
+  - name: "Ministry of Health and Family Welfare"
+    url: "https://www.mohfw.gov.in/"
+    official: true
+
+  - name: "Press Information Bureau"
+    url: "https://pib.gov.in/"
+    official: true
+
+  - name: "National Institute on Deafness and Other Communication Disorders"
+    url: "https://www.nidcd.nih.gov/news"
+    official: true
+
+  - name: "National Institutes of Health News"
+    url: "https://www.nih.gov/news-events/news-releases"
+    official: true
+
+  - name: "World Health Organization News"
+    url: "https://www.who.int/news"
+    official: true
+
+  - name: "Cochrane"
+    url: "https://www.cochrane.org/news"
+    official: true
+
+job_sources:
+
+  # National institutes and central government bodies
+  - name: "AIISH Job Opportunities"
+    url: "https://aiishmysore.in/others/job-opportunities"
+    official: true
+
+  - name: "AYJNISHD Recruitment"
+    url: "https://ayjnishd.nic.in/"
     official: true
 
   - name: "NIEPID"
@@ -153,19 +186,125 @@ job_sources:
     official: true
 
   - name: "NIMHANS"
-    url: "https://www.nimhans.ac.in/"
+    url: "https://nimhans.ac.in/"
     official: true
 
   - name: "PGIMER Chandigarh"
     url: "https://pgimer.edu.in/"
     official: true
 
-  - name: "AIIMS"
+  - name: "AIIMS New Delhi"
     url: "https://www.aiims.edu/"
     official: true
 
-  - name: "RCI"
-    url: "https://rehabcouncil.nic.in/"
+  - name: "AIIMS Bathinda Recruitment"
+    url: "https://aiimsbathinda.edu.in/Recruitment.aspx?type=2"
+    official: true
+
+  - name: "AIIMS Examination and Recruitment Portal"
+    url: "https://aiimsexams.ac.in/"
+    official: true
+
+  - name: "Ministry of Health and Family Welfare Vacancies"
+    url: "https://www.mohfw.gov.in/vacancy"
+    official: true
+
+  - name: "Dr Ram Manohar Lohia Hospital Recruitment"
+    url: "https://rmlh.mohfw.gov.in/index1.aspx?langid=1&lev=2&lid=181&lsid=201"
+    official: true
+
+  - name: "Employees State Insurance Corporation"
+    url: "https://www.esic.gov.in/"
+    official: true
+
+  # Railway Recruitment Boards: paramedical notices may contain BASLP posts
+  - name: "RRB Chennai"
+    url: "https://www.rrbchennai.gov.in/"
+    official: true
+
+  - name: "RRB Bhubaneswar"
+    url: "https://www.rrbbbs.gov.in/"
+    official: true
+
+  - name: "RRB Prayagraj"
+    url: "https://www.rrbald.gov.in/"
+    official: true
+
+  - name: "RRB Ahmedabad"
+    url: "https://www.rrbahmedabad.gov.in/"
+    official: true
+
+  - name: "RRB Ajmer"
+    url: "https://www.rrbajmer.gov.in/"
+    official: true
+
+  - name: "RRB Bhopal"
+    url: "https://www.rrbbhopal.gov.in/"
+    official: true
+
+  - name: "RRB Bilaspur"
+    url: "https://www.rrbbilaspur.gov.in/"
+    official: true
+
+  - name: "RRB Chandigarh"
+    url: "https://www.rrbcdg.gov.in/"
+    official: true
+
+  - name: "RRB Gorakhpur"
+    url: "https://www.rrbgkp.gov.in/"
+    official: true
+
+  - name: "RRB Guwahati"
+    url: "https://www.rrbguwahati.gov.in/"
+    official: true
+
+  - name: "RRB Kolkata"
+    url: "https://www.rrbkolkata.gov.in/"
+    official: true
+
+  - name: "RRB Mumbai"
+    url: "https://www.rrbmumbai.gov.in/"
+    official: true
+
+  - name: "RRB Patna"
+    url: "https://www.rrbpatna.gov.in/"
+    official: true
+
+  - name: "RRB Ranchi"
+    url: "https://www.rrbranchi.gov.in/"
+    official: true
+
+  - name: "RRB Secunderabad"
+    url: "https://www.rrbsecunderabad.gov.in/"
+    official: true
+
+  - name: "RRB Thiruvananthapuram"
+    url: "https://www.rrbthiruvananthapuram.gov.in/"
+    official: true
+
+  # National and state health recruitment portals
+  - name: "National Health Mission India"
+    url: "https://nhm.gov.in/"
+    official: true
+
+  - name: "National Health Mission Punjab"
+    url: "https://nhm.punjab.gov.in/"
+    official: true
+
+  - name: "National Health Mission Kerala"
+    url: "https://arogyakeralam.gov.in/"
+    official: true
+
+  - name: "National Health Mission Assam"
+    url: "https://nhm.assam.gov.in/"
+    official: true
+
+  - name: "National Health Mission Maharashtra"
+    url: "https://nhm.maharashtra.gov.in/"
+    official: true
+
+  - name: "National Health Mission Karnataka"
+    url: "https://nhm.karnataka.gov.in/"
     official: true
 
 
