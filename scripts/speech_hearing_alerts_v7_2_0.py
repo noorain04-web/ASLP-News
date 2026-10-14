@@ -1815,18 +1815,23 @@ def professional_impact(
 # ============================================================
 
 def format_news(news):
-    items = [item for item in news if item.get("title") and item.get("url") and item.get("source")]
+    items = [
+        item for item in news
+        if item.get("title") and item.get("url") and item.get("source")
+    ]
     lines = ["CLINICAL, RESEARCH, POLICY & TECHNOLOGY UPDATES", ""]
     if not items:
         lines.append("No qualifying, non-duplicate updates were verified in the current 7-day monitoring window.")
-        return "
-".join(lines)
+        return "\n".join(lines)
     for index, item in enumerate(items, 1):
         topics = [topic for topic in item.get("topics", []) if topic]
         sources = [source for source in item.get("sources", []) if source]
         if not sources and item.get("source"):
             sources = [item["source"]]
-        lines.extend([f"{index}. {item['title']}", f"Source: {', '.join(dict.fromkeys(sources))}"])
+        lines.extend([
+            f"{index}. {item['title']}",
+            f"Source: {', '.join(dict.fromkeys(sources))}",
+        ])
         if topics:
             lines.append("Area: " + ", ".join(topics[:4]))
         impact = professional_impact(item)
@@ -1834,17 +1839,19 @@ def format_news(news):
             lines.append("Professional relevance: " + impact)
         lines.append("Source link: " + item["url"])
         lines.append("")
-    return "
-".join(lines).rstrip()
+    return "\n".join(lines).rstrip()
 
 
 def format_conferences(conferences):
-    items = [event for event in conferences if event.get("name") and event.get("url") and event.get("start") and event.get("end") and event.get("location") and event.get("organizer")]
+    items = [
+        event for event in conferences
+        if event.get("name") and event.get("url") and event.get("start")
+        and event.get("end") and event.get("location") and event.get("organizer")
+    ]
     lines = ["UPCOMING PROFESSIONAL CONFERENCES", ""]
     if not items:
         lines.append("No verified conference meeting the 90-day advance-notice criterion was found.")
-        return "
-".join(lines)
+        return "\n".join(lines)
     for index, event in enumerate(items, 1):
         lines.extend([
             f"{index}. {event['name']}",
@@ -1854,8 +1861,7 @@ def format_conferences(conferences):
             f"Official event link: {event['url']}",
             "",
         ])
-    return "
-".join(lines).rstrip()
+    return "\n".join(lines).rstrip()
 
 
 def format_jobs(jobs):
