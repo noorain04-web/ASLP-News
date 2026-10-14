@@ -1096,7 +1096,8 @@ def news_score(item):
         ) * 2,
     )
 
-    # High-value development terms    for term in HIGH_VALUE:
+    # High-value development terms
+    for term in HIGH_VALUE:
 
         if normalize(term) in text:
 
@@ -1495,7 +1496,8 @@ def collect_conferences(
     all_events = []
     all_events.extend(
         KNOWN_CONFERENCES
-    )    all_events.extend(
+    )
+    all_events.extend(
         config.get(
             "conferences",
             [],
@@ -1599,7 +1601,8 @@ def has_relevant_qualification(text):
 
 
 def has_relevant_role(text):
-    normalized = normalize(text)    return any(normalize(term) in normalized for term in JOB_TERMS)
+    normalized = normalize(text)
+    return any(normalize(term) in normalized for term in JOB_TERMS)
 
 
 def job_link_candidate(title, url):
@@ -1625,11 +1628,10 @@ def genuine_vacancy(title, text):
 def qualification_evidence(text):
     if not text:
         return ""
-    sentences = re.split(r"(?<=[.;])s+|
-+", text)
+    sentences = re.split(r"(?<=[.;])\s+|\n+", text)
     markers = [
-        r"B.?s*A.?s*S.?s*L.?s*P.?", r"M.?s*A.?s*S.?s*L.?s*P.?",
-        r"BASLP", r"MASLP",
+        r"\bB.?s*A.?s*S.?s*L.?s*P.?\b", r"\bM.?s*A.?s*S.?s*L.?s*P.?\b",
+        r"\bBASLP\b", r"\bMASLP\b",
         r"bachelor.{0,70}(?:audiology|speech.{0,15}language|speech.{0,15}hearing)",
         r"master.{0,70}(?:audiology|speech.{0,15}language|speech.{0,15}hearing)",
         r"M.?s*Sc.?.{0,50}(?:audiology|speech.{0,15}language|speech.{0,15}hearing)",
@@ -1662,7 +1664,13 @@ def collect_jobs(config):
             seen_links = set()
 
             def add_candidate(title, link):
-                if not job_link_candidate(title, link):
+                link_text = normalize(str(title) + " " + str(link))
+                recruitment_document = any(token in link_text for token in [
+                    "recruitment", "paramedical", "notification", "advertisement",
+                    "employment notice", "cen", "vacancy", "careers", "jobs",
+                    "job opportunities", "recruitment notice",
+                ])
+                if not job_link_candidate(title, link) and not recruitment_document:
                     return
                 parsed = urlparse(link)
                 canonical = (parsed.netloc.lower().removeprefix("www."), parsed.path.rstrip("/"))
@@ -1673,7 +1681,15 @@ def collect_jobs(config):
 
             # Crawl one level into official career/recruitment index pages.
             for title, link in source_links[:1200]:
-                if normalize(title) in generic_index_titles:
+                title_url_text = normalize(str(title) + " " + str(link))
+                likely_index = normalize(title) in generic_index_titles or any(
+                    token in title_url_text for token in [
+                        "recruitment", "career", "vacancy", "notification",
+                        "paramedical", "cen", "advertisement", "employment notice",
+                        "job opportunity", "current openings",
+                    ]
+                )
+                if likely_index:
                     try:
                         nested = links_from_page(link, fetch(link))
                         for child_title, child_link in nested[:1200]:
