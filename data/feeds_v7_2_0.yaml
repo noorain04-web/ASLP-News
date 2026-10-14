@@ -307,6 +307,42 @@ job_sources:
     url: "https://nhm.karnataka.gov.in/"
     official: true
 
+  - name: "National Health Mission Haryana"
+    url: "https://nhmharyana.gov.in/"
+    official: true
+
+  - name: "National Health Mission Uttar Pradesh"
+    url: "https://upnrhm.gov.in/"
+    official: true
+
+  - name: "State Health Society Bihar"
+    url: "https://shs.bihar.gov.in/"
+    official: true
+
+  - name: "Medical Services Recruitment Board Tamil Nadu"
+    url: "https://www.mrb.tn.gov.in/"
+    official: true
+
+  - name: "West Bengal Health Recruitment Board"
+    url: "https://www.wbhrb.in/"
+    official: true
+
+  - name: "National Health Mission Odisha"
+    url: "https://nhmodisha.gov.in/"
+    official: true
+
+  - name: "National Health Mission Madhya Pradesh"
+    url: "https://www.nhmmp.gov.in/"
+    official: true
+
+  - name: "National Health Mission Gujarat"
+    url: "https://nhm.gujarat.gov.in/"
+    official: true
+
+  - name: "National Health Mission Rajasthan"
+    url: "https://nhmrajasthan.nic.in/"
+    official: true
+
 
 conferences:
 
