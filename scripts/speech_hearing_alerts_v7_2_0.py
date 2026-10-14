@@ -2047,7 +2047,7 @@ def main():
     )
 
     message = "\n\n".join(
-        [
+        part for part in [
             "SPEECH, LANGUAGE, HEARING & COMMUNICATION",
             "DAILY PROFESSIONAL INTELLIGENCE",
 
@@ -2071,7 +2071,7 @@ def main():
             "SOURCE STATUS\n" + health_summary(),
 
             "Editorial standard: expired vacancies, results, static pages, incomplete entries and duplicate stories are excluded.",
-        ]
+        ] if part.strip()
     )
 
     # Save complete alert
