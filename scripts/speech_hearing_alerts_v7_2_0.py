@@ -497,8 +497,7 @@ def parse_date(value):
     try:
 
         parsed = dtparser.parse(
-            str(value),            fuzzy=True,
-            dayfirst=True,
+            str(value),            fuzzy=True,            dayfirst=True,
         )
 
         if parsed.tzinfo is None:
@@ -999,7 +998,6 @@ def links_from_page(
         )
     return output
 
-
 # ============================================================
 # ARTICLE METADATA
 # ============================================================
@@ -1233,6 +1231,22 @@ def collect_news(
                     + " "
                     + body
                 )
+
+                # Recruitment notices belong in the dedicated vacancy section.
+                normalized_headline = normalize(title + " " + summary)
+                job_notice = any(
+                    normalize(term) in normalized_headline
+                    for term in [
+                        "recruitment", "vacancy", "vacancies",
+                        "applications invited", "walk in interview",
+                        "job opening", "last date to apply",
+                    ]
+                )
+                if job_notice and (
+                    has_relevant_role(combined)
+                    or has_relevant_qualification(combined)
+                ):
+                    continue
 
                 detected = topics_for(
                     combined
@@ -1497,7 +1511,6 @@ def collect_conferences(
 
     unique = {}
     for event in all_events:
-
         try:
 
             start = date.fromisoformat(
@@ -1997,8 +2010,7 @@ def main():
     news = collect_news(
         config    )
 
-    print(
-        f"News retained: {len(news)}"
+    print(        f"News retained: {len(news)}"
     )
 
     print(
@@ -2031,8 +2043,8 @@ def main():
             "DAILY PROFESSIONAL INTELLIGENCE",
 
             (
-                f"📅 {today().strftime('%d %B %Y')}\n"
-                f"⏰ {now_ist().strftime('%I:%M %p')} IST"
+                f"Date: {today().strftime('%d %B %Y')}\n"
+                f"Time: {now_ist().strftime('%I:%M %p')} IST"
             ),
 
             format_news(
