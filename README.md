@@ -4,7 +4,7 @@ Daily professional intelligence for speech-language pathology and audiology, wit
 
 ## Daily digest
 
-The GitHub Actions workflow runs at **10:00 AM India Standard Time** and can also be started manually from **Actions → Speech Hearing Daily Intelligence → Run workflow**. It compiles clinical/research/policy/technology updates, selected upcoming conferences, and verified open government vacancies into `audit/alert_YYYY-MM-DD_v7_2_0.txt`. Telegram delivery remains available when its secrets are configured.
+The GitHub Actions workflow runs at **10:00 AM India Standard Time** and can also be started manually from **Actions → Speech Hearing Daily Intelligence → Run workflow**. The digest now retains up to **15** verified, non-duplicate clinical/research/policy/technology updates and up to **8** upcoming conferences. The vacancy monitor searches central institutes, AIIMS and other health institutions, Railway Recruitment Boards, and selected National Health Mission/state health recruitment portals. It checks role titles and BASLP/MASLP-related qualification wording, including PDF recruitment notices, and lists every verified open vacancy found in the monitored sources without a fixed five-job cap. Deadlines are checked against the current India date; expired, incomplete and duplicate entries are excluded. Because Indian vacancies are published across many independent central, state and district portals, coverage depends on the official sources configured in `data/feeds_v7_2_0.yaml`; the digest should not be interpreted as a guarantee that every vacancy nationwide has been captured. The alert is saved to `audit/alert_YYYY-MM-DD_v7_2_0.txt`. Telegram delivery remains available when its secrets are configured.
 
 ## Enable public email subscriptions
 
