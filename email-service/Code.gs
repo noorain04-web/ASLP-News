@@ -25,6 +25,8 @@ function doGet(e) {
 }
 
 function doPost(e) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
   try {
     const payload = JSON.parse((e && e.postData && e.postData.contents) || "{}");
     const expectedSecret = PropertiesService.getScriptProperties().getProperty("EMAIL_WEBHOOK_SECRET");
@@ -101,6 +103,8 @@ function doPost(e) {
   } catch (err) {
     console.error(err && err.stack ? err.stack : err);
     return json_(500, { ok: false, error: "Internal error while processing request" });
+  } finally {
+    lock.releaseLock();
   }
 }
 
