@@ -50,7 +50,10 @@ function doPost(e) {
 
     const sheet = subscriberSheet_();
     const lastRow = sheet.getLastRow();
-    if (lastRow < 2) return json_(200, { ok: true, sent: 0, message: "No subscribers yet" });
+    if (lastRow < 2) {
+      props.setProperty("LAST_ALERT_DATE", alertDate);
+      return json_(200, { ok: true, sent: 0, message: "No subscribers yet" });
+    }
 
     const rows = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
     const recipients = [];
@@ -63,7 +66,10 @@ function doPost(e) {
       }
     });
 
-    if (!recipients.length) return json_(200, { ok: true, sent: 0, message: "No confirmed subscribers" });
+    if (!recipients.length) {
+      props.setProperty("LAST_ALERT_DATE", alertDate);
+      return json_(200, { ok: true, sent: 0, message: "No confirmed subscribers" });
+    }
 
     const quota = MailApp.getRemainingDailyQuota();
     if (quota < recipients.length) {
