@@ -157,6 +157,7 @@ function verifySubscription_(token) {
   sheet.getRange(row, 7).setValue(new Date()); // verifiedAt
   sheet.getRange(row, 3).clearContent();
   sheet.getRange(row, 5).setValue(randomToken_());
+  sheet.getRange(row, 5).setValue(randomToken_());
   return "Your subscription is confirmed. ASLP-News daily intelligence will arrive by email.";
 }
 
