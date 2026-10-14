@@ -389,7 +389,7 @@ JOB_QUALIFICATION_TERMS = [
     "bachelor of audiology", "bachelor in audiology speech language pathology",
     "maslp", "m.aslp", "m a slp", "m.sc audiology", "msc audiology",
     "m.sc speech language pathology", "msc speech language pathology",
-    "master in audiology", "master of audiology", "speech and hearing",
+    "master in audiology", "master of audiology",
     "bachelor of speech and hearing", "audiology and speech language pathology",
 ]
 
@@ -497,7 +497,6 @@ def parse_date(value):
         return None
 
     try:
-
         parsed = dtparser.parse(
             str(value),            fuzzy=True,            dayfirst=True,        )
         if parsed.tzinfo is None:
@@ -997,8 +996,7 @@ def links_from_page(
             )
         )
     return output
-# ============================================================
-# ARTICLE METADATA# ============================================================
+# ============================================================# ARTICLE METADATA# ============================================================
 
 def inspect_article(url):
 
@@ -1497,8 +1495,7 @@ def collect_conferences(
     all_events = []
     all_events.extend(
         KNOWN_CONFERENCES
-    )
-    all_events.extend(
+    )    all_events.extend(
         config.get(
             "conferences",
             [],
@@ -1997,8 +1994,7 @@ def main():
         )
     ) or {}
     print(
-        "Collecting clinical/research/policy "
-        "information..."
+        "Collecting clinical/research/policy "        "information..."
     )
 
     news = collect_news(
