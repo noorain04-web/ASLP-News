@@ -2,8 +2,7 @@ name: Speech Hearing Daily Intelligence
 
 on:
   schedule:
-    - cron: "30 4 * * *"
-
+    - cron: "30 4 * * *" # 10:00 AM IST
   workflow_dispatch:
 
 permissions:
@@ -11,79 +10,88 @@ permissions:
 
 jobs:
   intelligence:
-
     runs-on: ubuntu-latest
-
     steps:
-
-      # --------------------------------
-      # CHECKOUT
-      # --------------------------------
-
       - name: Checkout repository
         uses: actions/checkout@v4
-
-
-      # --------------------------------
-      # PYTHON
-      # --------------------------------
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-
-      # --------------------------------
-      # DEPENDENCIES
-      # --------------------------------
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests
-          pip install beautifulsoup4
-          pip install python-dateutil
-          pip install pyyaml
-
-
-      # --------------------------------
-      # DIRECTORIES
-      # --------------------------------
+          pip install requests beautifulsoup4 python-dateutil pyyaml
 
       - name: Create required directories
-        run: |
-          mkdir -p data
-          mkdir -p audit
-
-
-      # --------------------------------
-      # RUN INTELLIGENCE
-      # --------------------------------
+        run: mkdir -p data audit
 
       - name: Run ISHA Professional Intelligence V7.2.0
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python scripts/speech_hearing_alerts_v7_2_0.py
 
+      - name: Email the daily alert to confirmed subscribers
+        env:
+          EMAIL_WEBAPP_URL: ${{ secrets.EMAIL_WEBAPP_URL }}
+          EMAIL_WEBHOOK_SECRET: ${{ secrets.EMAIL_WEBHOOK_SECRET }}
         run: |
-          python scripts/speech_hearing_alerts_v7_2_0.py
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import time
+          from pathlib import Path
+          import requests
 
+          url = os.getenv("EMAIL_WEBAPP_URL", "").strip()
+          secret = os.getenv("EMAIL_WEBHOOK_SECRET", "").strip()
+          if not url or not secret:
+              print("Email broadcast skipped: EMAIL_WEBAPP_URL / EMAIL_WEBHOOK_SECRET secret(s) not configured.")
+              raise SystemExit(0)
 
-      # --------------------------------
-      # SAVE MEMORY / AUDIT
-      # --------------------------------
+          # The alert date is generated in Asia/Kolkata by the existing script.
+          today_ist = __import__("datetime").datetime.now(
+              __import__("zoneinfo").ZoneInfo("Asia/Kolkata")
+          ).date().isoformat()
+          alert = Path("audit") / f"alert_{today_ist}_v7_2_0.txt"
+          if not alert.exists():
+              candidates = sorted(
+                  Path("audit").glob("alert_*_v7_2_0.txt"),
+                  key=lambda p: p.stat().st_mtime,
+                  reverse=True,
+              )
+              if not candidates or candidates[0].stat().st_mtime < time.time() - 2 * 60 * 60:
+                  raise SystemExit("No freshly generated alert file found; refusing to email stale content.")
+              alert = candidates[0]
+
+          match = re.search(r"alert_(\d{4}-\d{2}-\d{2})_v7_2_0\.txt$", alert.name)
+          if not match:
+              raise SystemExit(f"Could not extract alert date from {alert.name}")
+          payload = {
+              "secret": secret,
+              "alertDate": match.group(1),
+              "body": alert.read_text(encoding="utf-8"),
+          }
+          response = requests.post(url, json=payload, timeout=90)
+          response.raise_for_status()
+          try:
+              result = response.json()
+          except ValueError:
+              raise SystemExit("Email web app returned non-JSON. Check deployment and URL.")
+          if not result.get("ok"):
+              raise SystemExit("Email broadcast was not confirmed by web app: " + json.dumps(result))
+          print(json.dumps({k: v for k, v in result.items() if k != "secret"}))
+          PY
 
       - name: Save alert memory and audit
         run: |
-
           git config user.name "github-actions[bot]"
-
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
-
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/ audit/
-
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
